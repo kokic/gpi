@@ -18,7 +18,7 @@ fn search_profile() -> @gpi.RetrievalProfile[
   {
     normalize_query: @gpi.identity_normalize,
     normalize_candidate: @gpi.identity_normalize,
-    traverse: @gpi.preorder,
+    traverse: pattern => pattern.preorder(),
     key: @gpi.default_key,
     matches: (_, _) => true,
     rank: (_, candidates) => candidates,

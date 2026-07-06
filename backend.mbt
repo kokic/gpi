@@ -28,6 +28,11 @@ pub(all) struct RetrievalIndex[Backend, Pattern, Key, Candidate] {
 }
 
 ///|
+pub fn[Pattern] identity_normalize(pattern : Pattern) -> Pattern {
+  pattern
+}
+
+///|
 pub fn[Pattern, Key, Candidate] RetrievalProfile::query_keys(
   self : RetrievalProfile[Pattern, Key, Candidate],
   pattern : Pattern,

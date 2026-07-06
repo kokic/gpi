@@ -60,12 +60,12 @@ const SYM_JSON = 27
 
 ///|
 fn tv(id : Int) -> @gpi.Pattern[Int, Int] {
-  @gpi.pattern_var(id)
+  @gpi.Pattern::variable(id)
 }
 
 ///|
 fn tc(symbol : Int) -> @gpi.Pattern[Int, Int] {
-  @gpi.pattern_leaf(symbol)
+  @gpi.Pattern::leaf(symbol)
 }
 
 ///|
@@ -73,7 +73,7 @@ fn app(
   symbol : Int,
   args : Array[@gpi.Pattern[Int, Int]],
 ) -> @gpi.Pattern[Int, Int] {
-  @gpi.pattern_node(symbol, args)
+  @gpi.Pattern::node(symbol, args)
 }
 
 ///|
@@ -369,7 +369,7 @@ fn bench_profile() -> @gpi.RetrievalProfile[
   {
     normalize_query: @gpi.identity_normalize,
     normalize_candidate: @gpi.identity_normalize,
-    traverse: @gpi.preorder,
+    traverse: pattern => pattern.preorder(),
     key: @gpi.default_key,
     matches: (_, _) => true,
     rank: (_, candidates) => candidates,
@@ -385,7 +385,7 @@ fn bench_filtering_profile() -> @gpi.RetrievalProfile[
   {
     normalize_query: @gpi.identity_normalize,
     normalize_candidate: @gpi.identity_normalize,
-    traverse: @gpi.preorder,
+    traverse: pattern => pattern.preorder(),
     key: @gpi.default_key,
     matches: (_, candidate) => candidate % 3 != 0,
     rank: (_, candidates) => {

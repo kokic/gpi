@@ -59,17 +59,17 @@ pub fn tuple_type(items : Array[MbType]) -> MbType {
 ///|
 pub fn MbType::to_pattern(self : MbType) -> @gpi.Pattern[String, String] {
   match self {
-    Con(name) => @gpi.pattern_leaf("type:" + name)
-    Var(name) => @gpi.pattern_var(name)
+    Con(name) => @gpi.Pattern::leaf("type:" + name)
+    Var(name) => @gpi.Pattern::variable(name)
     App(name, args) =>
-      @gpi.pattern_node("type:" + name, args.map(arg => arg.to_pattern()))
+      @gpi.Pattern::node("type:" + name, args.map(arg => arg.to_pattern()))
     Fun(args, return_type) => {
       let children = args.map(arg => arg.to_pattern())
       children.push(return_type.to_pattern())
-      @gpi.pattern_node("fn", children)
+      @gpi.Pattern::node("fn", children)
     }
     Tuple(items) =>
-      @gpi.pattern_node(
+      @gpi.Pattern::node(
         "tuple/" + items.length().to_string(),
         items.map(item => item.to_pattern()),
       )
