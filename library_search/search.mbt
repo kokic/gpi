@@ -1,6 +1,6 @@
 ///|
 pub struct MbSearchIndex {
-  candidates : Array[MbCandidate]
+  candidates : Array[MbtCandidate]
   index : @gpi.RetrievalIndex[
     @gpi.StandardDiscrTree[String, Int],
     @gpi.Pattern[String, String],
@@ -33,7 +33,7 @@ pub fn MbSearchIndex::new() -> MbSearchIndex {
 ///|
 pub fn MbSearchIndex::add_candidate(
   self : MbSearchIndex,
-  candidate : MbCandidate,
+  candidate : MbtCandidate,
 ) -> Unit {
   let id = self.candidates.length()
   self.candidates.push(candidate)
@@ -44,7 +44,7 @@ pub fn MbSearchIndex::add_candidate(
 pub fn MbSearchIndex::add_doc_signature(
   self : MbSearchIndex,
   line : String,
-) -> Unit raise MbSearchError {
+) -> Unit raise MbtSearchError {
   self.add_candidate(parse_doc_signature(line))
 }
 
@@ -52,7 +52,7 @@ pub fn MbSearchIndex::add_doc_signature(
 pub fn MbSearchIndex::add_doc_signatures(
   self : MbSearchIndex,
   lines : Array[String],
-) -> Unit raise MbSearchError {
+) -> Unit raise MbtSearchError {
   for line in lines {
     let trimmed = line.trim().to_owned()
     if trimmed.has_prefix("pub fn") {
@@ -62,7 +62,7 @@ pub fn MbSearchIndex::add_doc_signatures(
 }
 
 ///|
-fn result_compare(left : MbSearchResult, right : MbSearchResult) -> Int {
+fn result_compare(left : MbtSearchResult, right : MbtSearchResult) -> Int {
   let by_score = left.score.compare(right.score)
   if by_score != 0 {
     by_score
@@ -76,7 +76,7 @@ pub fn MbSearchIndex::search_type(
   self : MbSearchIndex,
   query : String,
   limit? : Int = 20,
-) -> Array[MbSearchResult] raise MbSearchError {
+) -> Array[MbtSearchResult] raise MbtSearchError {
   let query_type = parse_type(query)
   self.search(query_type, limit~)
 }
@@ -84,11 +84,11 @@ pub fn MbSearchIndex::search_type(
 ///|
 pub fn MbSearchIndex::search(
   self : MbSearchIndex,
-  query_type : MbType,
+  query_type : MbtType,
   limit? : Int = 20,
-) -> Array[MbSearchResult] {
+) -> Array[MbtSearchResult] {
   let ids = self.index.retrieve(query_type.to_pattern())
-  let results : Array[MbSearchResult] = []
+  let results : Array[MbtSearchResult] = []
   for id in ids {
     match self.candidates.get(id) {
       Some(candidate) =>
@@ -113,7 +113,7 @@ pub fn search_doc_signatures(
   lines : Array[String],
   query : String,
   limit? : Int = 20,
-) -> Array[MbSearchResult] raise MbSearchError {
+) -> Array[MbtSearchResult] raise MbtSearchError {
   let index = MbSearchIndex::new()
   index..add_doc_signatures(lines).search_type(query, limit~)
 }

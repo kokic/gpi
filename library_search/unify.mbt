@@ -1,5 +1,5 @@
 ///|
-fn occurs(name : String, t : MbType) -> Bool {
+fn occurs(name : String, t : MbtType) -> Bool {
   match t {
     Var(v) => v == name
     Con(_) => false
@@ -12,9 +12,9 @@ fn occurs(name : String, t : MbType) -> Bool {
 
 ///|
 fn bind_var(
-  subst : Map[String, MbType],
+  subst : Map[String, MbtType],
   name : String,
-  target : MbType,
+  target : MbtType,
 ) -> Bool {
   match subst.get(name) {
     Some(existing) => existing == target
@@ -30,9 +30,9 @@ fn bind_var(
 
 ///|
 fn unify_candidate(
-  candidate : MbType,
-  query : MbType,
-  subst : Map[String, MbType],
+  candidate : MbtType,
+  query : MbtType,
+  subst : Map[String, MbtType],
 ) -> Bool {
   match candidate {
     Var(name) => bind_var(subst, name, query)
@@ -68,9 +68,9 @@ fn unify_candidate(
 
 ///|
 fn unify_arrays(
-  left : Array[MbType],
-  right : Array[MbType],
-  subst : Map[String, MbType],
+  left : Array[MbtType],
+  right : Array[MbtType],
+  subst : Map[String, MbtType],
 ) -> Bool {
   if left.length() != right.length() {
     false
@@ -85,6 +85,6 @@ fn unify_arrays(
 }
 
 ///|
-pub fn matches_type(candidate : MbType, query : MbType) -> Bool {
+pub fn matches_type(candidate : MbtType, query : MbtType) -> Bool {
   unify_candidate(candidate, query, Map::default())
 }

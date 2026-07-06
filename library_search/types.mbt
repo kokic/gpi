@@ -1,63 +1,63 @@
 ///|
-pub(all) enum MbType {
+pub(all) enum MbtType {
   Con(String)
   Var(String)
-  App(String, Array[MbType])
-  Fun(Array[MbType], MbType)
-  Tuple(Array[MbType])
+  App(String, Array[MbtType])
+  Fun(Array[MbtType], MbtType)
+  Tuple(Array[MbtType])
 } derive(Eq, Hash, Debug)
 
 ///|
-pub(all) struct MbCandidate {
+pub(all) struct MbtCandidate {
   name : String
-  signature : MbType
+  signature : MbtType
   source : String
 }
 
 ///|
-pub(all) struct MbSearchResult {
-  candidate : MbCandidate
+pub(all) struct MbtSearchResult {
+  candidate : MbtCandidate
   score : Int
 }
 
 ///|
-pub(all) suberror MbSearchError {
+pub(all) suberror MbtSearchError {
   InvalidType(input~ : String, offset~ : Int, message~ : String)
   InvalidSignature(line~ : String, message~ : String)
 } derive(Eq, Debug)
 
 ///|
-pub fn con(name : String) -> MbType {
+pub fn con(name : String) -> MbtType {
   Con(name)
 }
 
 ///|
-pub fn type_var(name : String) -> MbType {
+pub fn type_var(name : String) -> MbtType {
   Var(name)
 }
 
 ///|
-pub fn app(name : String, args : Array[MbType]) -> MbType {
+pub fn app(name : String, args : Array[MbtType]) -> MbtType {
   App(name, args)
 }
 
 ///|
-pub fn option(t : MbType) -> MbType {
+pub fn option(t : MbtType) -> MbtType {
   App("Option", [t])
 }
 
 ///|
-pub fn function_type(args : Array[MbType], return_type : MbType) -> MbType {
+pub fn function_type(args : Array[MbtType], return_type : MbtType) -> MbtType {
   Fun(args, return_type)
 }
 
 ///|
-pub fn tuple_type(items : Array[MbType]) -> MbType {
+pub fn tuple_type(items : Array[MbtType]) -> MbtType {
   Tuple(items)
 }
 
 ///|
-pub fn MbType::to_pattern(self : MbType) -> @gpi.Pattern[String, String] {
+pub fn MbtType::to_pattern(self : MbtType) -> @gpi.Pattern[String, String] {
   match self {
     Con(name) => @gpi.Pattern::leaf("type:" + name)
     Var(name) => @gpi.Pattern::variable(name)
@@ -77,7 +77,7 @@ pub fn MbType::to_pattern(self : MbType) -> @gpi.Pattern[String, String] {
 }
 
 ///|
-fn MbType::generic_count(self : MbType) -> Int {
+fn MbtType::generic_count(self : MbtType) -> Int {
   match self {
     Var(_) => 1
     Con(_) => 0
@@ -92,7 +92,7 @@ fn MbType::generic_count(self : MbType) -> Int {
 }
 
 ///|
-fn MbType::node_count(self : MbType) -> Int {
+fn MbtType::node_count(self : MbtType) -> Int {
   match self {
     Var(_) | Con(_) => 1
     App(_, args) => 1 + args.fold(init=0, (acc, arg) => acc + arg.node_count())
@@ -106,7 +106,7 @@ fn MbType::node_count(self : MbType) -> Int {
 }
 
 ///|
-fn candidate_score(query : MbType, candidate : MbType) -> Int {
+fn candidate_score(query : MbtType, candidate : MbtType) -> Int {
   if query == candidate {
     0
   } else {
