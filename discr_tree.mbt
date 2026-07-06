@@ -77,12 +77,17 @@ fn[Symbol : Eq + Hash, Candidate] Trie::retrieve_match(
       } else {
         let key = keys[index]
         if key is Star {
-          children.each((_, child) => {
-            child.retrieve_match(keys, index + 1, output)
+          children.each((child_key, child) => {
+            child.retrieve_after_candidate_subtree(
+              pending=child_key.subtree_arity(),
+              keys,
+              index + 1,
+              output,
+            )
           })
         } else {
           if children.get(Star) is Some(child) {
-            child.retrieve_match(keys, index + 1, output)
+            child.retrieve_match(keys, skip_query_subtree(keys, index), output)
           }
           if children.get(key) is Some(child) {
             child.retrieve_match(keys, index + 1, output)
@@ -90,6 +95,42 @@ fn[Symbol : Eq + Hash, Candidate] Trie::retrieve_match(
         }
       }
   }
+}
+
+///|
+fn[Symbol : Eq + Hash, Candidate] Trie::retrieve_after_candidate_subtree(
+  self : Trie[Symbol, Candidate],
+  pending~ : Int,
+  keys : Array[Key[Symbol]],
+  index : Int,
+  output : Array[Candidate],
+) -> Unit {
+  if pending == 0 {
+    self.retrieve_match(keys, index, output)
+  } else {
+    match self {
+      TrieNode(_, children) =>
+        children.each((key, child) => {
+          child.retrieve_after_candidate_subtree(
+            pending=pending - 1 + key.subtree_arity(),
+            keys,
+            index,
+            output,
+          )
+        })
+    }
+  }
+}
+
+///|
+fn[Symbol] skip_query_subtree(keys : Array[Key[Symbol]], index : Int) -> Int {
+  let mut pending = 1
+  let mut next = index
+  while pending > 0 && next < keys.length() {
+    pending = pending - 1 + keys[next].subtree_arity()
+    next += 1
+  }
+  next
 }
 
 ///|

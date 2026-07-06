@@ -87,13 +87,7 @@ pub fn MbSearchIndex::search(
   query_type : MbType,
   limit? : Int = 20,
 ) -> Array[MbSearchResult] {
-  let ids = if query_type.has_var() {
-    // TODO: replace this temporary full scan once GPI supports arity-aware
-    // wildcard skip keys for variable-bearing queries.
-    Array::makei(self.candidates.length(), i => i)
-  } else {
-    self.index.retrieve(query_type.to_pattern())
-  }
+  let ids = self.index.retrieve(query_type.to_pattern())
   let results : Array[MbSearchResult] = []
   for id in ids {
     match self.candidates.get(id) {

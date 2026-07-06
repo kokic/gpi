@@ -55,6 +55,15 @@ test "search higher order array map" {
 }
 
 ///|
+test "search nested generic candidate variable through index" {
+  let index = sample_index()
+  let results = index.search_type(
+    "Array[Array[String]] -> Int -> Option[Array[String]]",
+  )
+  debug_inspect(results.map(r => r.candidate.name), content="[\"Array::get\"]")
+}
+
+///|
 test "search query variable return" {
   let index = sample_index()
   let results = index.search_type("String -> StringView -> R")

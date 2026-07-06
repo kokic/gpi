@@ -39,11 +39,8 @@ Supported type syntax includes:
 - `Self[T]` inside method signatures, resolved from `Array::method`
 - trailing `raise` / `raise?`, ignored for now
 
-## Current Limits
+## Indexing
 
-Queries containing type variables fall back to scanning all indexed candidates
-after parsing. This preserves correctness while GPI lacks arity-aware wildcard
-skip keys. Concrete queries still use the discrimination tree first.
-
-This is a temporary implementation detail and is marked with a `TODO` in the
-search code.
+Queries containing type variables use GPI's arity-aware wildcard keys to
+retrieve potential matches from the discrimination tree before unification
+checks repeated-variable constraints.

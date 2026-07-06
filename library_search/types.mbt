@@ -106,18 +106,6 @@ fn MbType::node_count(self : MbType) -> Int {
 }
 
 ///|
-fn MbType::has_var(self : MbType) -> Bool {
-  match self {
-    Var(_) => true
-    Con(_) => false
-    App(_, args) => args.any(arg => arg.has_var())
-    Fun(args, return_type) =>
-      return_type.has_var() || args.any(arg => arg.has_var())
-    Tuple(items) => items.any(item => item.has_var())
-  }
-}
-
-///|
 fn candidate_score(query : MbType, candidate : MbType) -> Int {
   if query == candidate {
     0
