@@ -16,16 +16,12 @@ pub fn[Symbol, Candidate] StandardDiscrTree::export_to_dot(
 fn dot_escape(input : String) -> String {
   let builder = StringBuilder::new(size_hint=input.length())
   for ch in input {
-    if ch == '\\' {
-      builder.write_string("\\\\")
-    } else if ch == '"' {
-      builder.write_string("\\\"")
-    } else if ch == '\n' {
-      builder.write_string("\\n")
-    } else if ch == '\r' {
-      builder.write_string("\\r")
-    } else {
-      builder.write_char(ch)
+    match ch {
+      '\\' => builder <+ "\\\\"
+      '"' => builder <+ "\\\""
+      '\n' => builder <+ "\\n"
+      '\r' => builder <+ "\\r"
+      _ => builder.write_char(ch)
     }
   }
   builder.to_string()
