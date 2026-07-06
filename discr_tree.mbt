@@ -4,12 +4,12 @@ enum Trie[Symbol, Candidate] {
 }
 
 ///|
-fn[Symbol, Candidate] Trie::empty() -> Trie[Symbol, Candidate] {
+pub fn[Symbol, Candidate] Trie::empty() -> Trie[Symbol, Candidate] {
   TrieNode([], Map::default())
 }
 
 ///|
-fn[Symbol : Eq + Hash, Candidate : Eq] Trie::insert(
+pub fn[Symbol : Eq + Hash, Candidate : Eq] Trie::insert(
   self : Trie[Symbol, Candidate],
   keys : Array[Key[Symbol]],
   index : Int,
@@ -25,10 +25,7 @@ fn[Symbol : Eq + Hash, Candidate : Eq] Trie::insert(
         TrieNode(next_values, children.copy())
       } else {
         let key = keys[index]
-        let child = match children.get(key) {
-          Some(child) => child
-          None => Trie::empty()
-        }
+        let child = children.get(key).unwrap_or_else(() => Trie::empty())
         let next_child = child.insert(keys, index + 1, candidate)
         let next_children = children.copy()
         next_children.set(key, next_child)
@@ -105,20 +102,17 @@ fn[Symbol : Eq + Hash, Candidate] Trie::retrieve_after_candidate_subtree(
   index : Int,
   output : Array[Candidate],
 ) -> Unit {
-  if pending == 0 {
-    self.retrieve_match(keys, index, output)
-  } else {
-    match self {
-      TrieNode(_, children) =>
-        children.each((key, child) => {
-          child.retrieve_after_candidate_subtree(
-            pending=pending - 1 + key.subtree_arity(),
-            keys,
-            index,
-            output,
-          )
-        })
-    }
+  guard pending != 0 else { self.retrieve_match(keys, index, output) }
+  match self {
+    TrieNode(_, children) =>
+      children.each((key, child) => {
+        child.retrieve_after_candidate_subtree(
+          pending=pending - 1 + key.subtree_arity(),
+          keys,
+          index,
+          output,
+        )
+      })
   }
 }
 
