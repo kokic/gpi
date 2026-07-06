@@ -493,7 +493,10 @@ fn split_top_level_commas(
 }
 
 ///|
-fn param_type_text(param : String, line : String) -> String raise MbtSearchError {
+fn param_type_text(
+  param : String,
+  line : String,
+) -> String raise MbtSearchError {
   match find_top_level_annotation_colon(param, line) {
     Some(colon) =>
       param
