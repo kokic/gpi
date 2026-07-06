@@ -1,36 +1,34 @@
 ///|
-enum Trie[Symbol, Candidate] {
-  TrieNode(Array[Candidate], Map[Key[Symbol], Trie[Symbol, Candidate]])
+struct Trie[Symbol, Candidate] {
+  values : Array[Candidate]
+  children : Map[Key[Symbol], Trie[Symbol, Candidate]]
 }
 
 ///|
-pub fn[Symbol, Candidate] Trie::empty() -> Trie[Symbol, Candidate] {
-  TrieNode([], Map::default())
+fn[Symbol, Candidate] Trie::empty() -> Trie[Symbol, Candidate] {
+  { values: [], children: Map::default() }
 }
 
 ///|
-pub fn[Symbol : Eq + Hash, Candidate : Eq] Trie::insert(
+fn[Symbol : Eq + Hash, Candidate : Eq] Trie::insert(
   self : Trie[Symbol, Candidate],
   keys : Array[Key[Symbol]],
   index : Int,
   candidate : Candidate,
 ) -> Trie[Symbol, Candidate] {
-  match self {
-    TrieNode(values, children) =>
-      if index >= keys.length() {
-        let next_values = values.copy()
-        if !next_values.contains(candidate) {
-          next_values.push(candidate)
-        }
-        TrieNode(next_values, children.copy())
-      } else {
-        let key = keys[index]
-        let child = children.get(key).unwrap_or_else(() => Trie::empty())
-        let next_child = child.insert(keys, index + 1, candidate)
-        let next_children = children.copy()
-        next_children.set(key, next_child)
-        TrieNode(values.copy(), next_children)
-      }
+  if index >= keys.length() {
+    let next_values = self.values.copy()
+    if !next_values.contains(candidate) {
+      next_values.push(candidate)
+    }
+    Trie::{ values: next_values, children: self.children.copy() }
+  } else {
+    let key = keys[index]
+    let child = self.children.get(key).unwrap_or_else(() => Trie::empty())
+    let next_child = child.insert(keys, index + 1, candidate)
+    let next_children = self.children.copy()
+    next_children.set(key, next_child)
+    Trie::{ values: self.values.copy(), children: next_children }
   }
 }
 
@@ -41,22 +39,22 @@ fn[Symbol : Eq + Hash, Candidate : Eq] Trie::remove(
   index : Int,
   candidate : Candidate,
 ) -> Trie[Symbol, Candidate] {
-  match self {
-    TrieNode(values, children) =>
-      if index >= keys.length() {
-        TrieNode(values.filter(value => value != candidate), children.copy())
-      } else {
-        let key = keys[index]
-        match children.get(key) {
-          Some(child) => {
-            let next_child = child.remove(keys, index + 1, candidate)
-            let next_children = children.copy()
-            next_children.set(key, next_child)
-            TrieNode(values.copy(), next_children)
-          }
-          None => TrieNode(values.copy(), children.copy())
-        }
+  if index >= keys.length() {
+    Trie::{
+      values: self.values.filter(value => value != candidate),
+      children: self.children.copy(),
+    }
+  } else {
+    let key = keys[index]
+    match self.children.get(key) {
+      Some(child) => {
+        let next_child = child.remove(keys, index + 1, candidate)
+        let next_children = self.children.copy()
+        next_children.set(key, next_child)
+        { values: self.values.copy(), children: next_children }
       }
+      None => { values: self.values.copy(), children: self.children.copy() }
+    }
   }
 }
 
@@ -67,30 +65,27 @@ fn[Symbol : Eq + Hash, Candidate] Trie::retrieve_match(
   index : Int,
   output : Array[Candidate],
 ) -> Unit {
-  match self {
-    TrieNode(values, children) =>
-      if index >= keys.length() {
-        output.append(values)
-      } else {
-        let key = keys[index]
-        if key is Star {
-          children.each((child_key, child) => {
-            child.retrieve_after_candidate_subtree(
-              pending=child_key.subtree_arity(),
-              keys,
-              index + 1,
-              output,
-            )
-          })
-        } else {
-          if children.get(Star) is Some(child) {
-            child.retrieve_match(keys, skip_query_subtree(keys, index), output)
-          }
-          if children.get(key) is Some(child) {
-            child.retrieve_match(keys, index + 1, output)
-          }
-        }
+  if index >= keys.length() {
+    output.append(self.values)
+  } else {
+    let key = keys[index]
+    if key is Star {
+      self.children.each((child_key, child) => {
+        child.retrieve_after_candidate_subtree(
+          pending=child_key.subtree_arity(),
+          keys,
+          index + 1,
+          output,
+        )
+      })
+    } else {
+      if self.children.get(Star) is Some(child) {
+        child.retrieve_match(keys, skip_query_subtree(keys, index), output)
       }
+      if self.children.get(key) is Some(child) {
+        child.retrieve_match(keys, index + 1, output)
+      }
+    }
   }
 }
 
@@ -103,17 +98,14 @@ fn[Symbol : Eq + Hash, Candidate] Trie::retrieve_after_candidate_subtree(
   output : Array[Candidate],
 ) -> Unit {
   guard pending != 0 else { self.retrieve_match(keys, index, output) }
-  match self {
-    TrieNode(_, children) =>
-      children.each((key, child) => {
-        child.retrieve_after_candidate_subtree(
-          pending=pending - 1 + key.subtree_arity(),
-          keys,
-          index,
-          output,
-        )
-      })
-  }
+  self.children.each((key, child) => {
+    child.retrieve_after_candidate_subtree(
+      pending=pending - 1 + key.subtree_arity(),
+      keys,
+      index,
+      output,
+    )
+  })
 }
 
 ///|
@@ -132,12 +124,8 @@ fn[Symbol, Candidate] Trie::collect_all(
   self : Trie[Symbol, Candidate],
   output : Array[Candidate],
 ) -> Unit {
-  match self {
-    TrieNode(values, children) => {
-      output.append(values)
-      children.each((_, child) => child.collect_all(output))
-    }
-  }
+  output.append(self.values)
+  self.children.each((_, child) => child.collect_all(output))
 }
 
 ///|
@@ -203,7 +191,7 @@ pub fn[Symbol : Eq + Hash, Candidate : Eq] standard_backend_ops() -> BackendOps[
   Key[Symbol],
   Candidate,
 ] {
-  {
+  BackendOps::{
     insert: (backend, keys, candidate) => backend.insert(keys, candidate),
     remove: (backend, keys, candidate) => backend.remove(keys, candidate),
     retrieve: (backend, keys) => backend.retrieve(keys),
@@ -220,7 +208,7 @@ pub fn[Symbol : Eq + Hash, Pattern, Candidate : Eq] standard_index(
   Key[Symbol],
   Candidate,
 ] {
-  {
+  RetrievalIndex::{
     backend: StandardDiscrTree::new(),
     backend_ops: standard_backend_ops(),
     profile,
