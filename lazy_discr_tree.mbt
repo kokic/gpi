@@ -84,8 +84,7 @@ pub fn[Symbol : Eq + Hash, Candidate : Eq] LazyDiscrTree::retrieve(
     if root is Star {
       self.force_all()
     } else {
-      self.force_root(Star)
-      self.force_root(root)
+      self..force_root(Star).force_root(root)
     }
   }
   self.eager.retrieve(keys)

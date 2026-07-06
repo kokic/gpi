@@ -88,6 +88,8 @@ pub fn MbSearchIndex::search(
   limit? : Int = 20,
 ) -> Array[MbSearchResult] {
   let ids = if query_type.has_var() {
+    // TODO: replace this temporary full scan once GPI supports arity-aware
+    // wildcard skip keys for variable-bearing queries.
     Array::makei(self.candidates.length(), i => i)
   } else {
     self.index.retrieve(query_type.to_pattern())
@@ -119,6 +121,5 @@ pub fn search_doc_signatures(
   limit? : Int = 20,
 ) -> Array[MbSearchResult] raise MbSearchError {
   let index = MbSearchIndex::new()
-  index.add_doc_signatures(lines)
-  index.search_type(query, limit~)
+  index..add_doc_signatures(lines).search_type(query, limit~)
 }

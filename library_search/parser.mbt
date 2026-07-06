@@ -12,20 +12,17 @@ fn Parser::new(input : String, self_type? : String = "") -> Parser {
 
 ///|
 fn is_space(code : UInt16) -> Bool {
-  code == 32 || code == 9 || code == 10 || code == 13
+  code == ' ' || code == '\t' || code == '\n' || code == '\r'
 }
 
 ///|
 fn is_ident_start(code : UInt16) -> Bool {
-  (code >= 65 && code <= 90) ||
-  (code >= 97 && code <= 122) ||
-  code == 95 ||
-  code == 64
+  code is ('A'..='Z') || code is ('a'..='z') || code == '_' || code == '@'
 }
 
 ///|
 fn is_ident_continue(code : UInt16) -> Bool {
-  is_ident_start(code) || (code >= 48 && code <= 57) || code == 46 || code == 47
+  is_ident_start(code) || code is ('0'..='9') || code == '.' || code == '/'
 }
 
 ///|
@@ -203,12 +200,13 @@ fn Parser::parse_primary(self : Parser) -> MbType raise MbSearchError {
 
 ///|
 fn is_type_variable(name : String) -> Bool {
-  name.length() == 1 && name[0] >= 65 && name[0] <= 90
+  name.length() == 1 && name[0] is ('A'..='Z')
 }
 
 ///|
 fn strip_effect_suffix(input : String) -> String {
   let mut s = input.trim().to_owned()
+  // TODO: model MoonBit effects in MbType instead of temporarily erasing them.
   if s.has_suffix(" raise?") {
     s = s.unsafe_substring(start=0, end=s.length() - " raise?".length())
   } else if s.has_suffix(" raise") {
@@ -269,8 +267,8 @@ fn skip_generic_params(line : String, pos : Int) -> Int {
   while p < line.length() && is_space(line[p]) {
     p += 1
   }
-  if p < line.length() && line[p] == 91 {
-    let end = find_matching(line, p, 91, 93)
+  if p < line.length() && line[p] == '[' {
+    let end = find_matching(line, p, '[', ']')
     if end >= 0 {
       end + 1
     } else {
@@ -287,16 +285,16 @@ fn find_top_level_colon(input : String) -> Int {
   let mut bracket = 0
   for i in 0..<input.length() {
     let code = input[i]
-    if code == 40 {
+    if code == '(' {
       paren += 1
-    } else if code == 41 {
+    } else if code == ')' {
       paren -= 1
-    } else if code == 91 {
+    } else if code == '[' {
       bracket += 1
-    } else if code == 93 {
+    } else if code == ']' {
       bracket -= 1
-    } else if code == 58 && paren == 0 && bracket == 0 {
-      if i + 1 < input.length() && input[i + 1] == 58 {
+    } else if code == ':' && paren == 0 && bracket == 0 {
+      if i + 1 < input.length() && input[i + 1] == ':' {
         continue
       }
       return i
@@ -313,15 +311,15 @@ fn split_top_level_commas(input : String) -> Array[String] {
   let mut bracket = 0
   for i in 0..<input.length() {
     let code = input[i]
-    if code == 40 {
+    if code == '(' {
       paren += 1
-    } else if code == 41 {
+    } else if code == ')' {
       paren -= 1
-    } else if code == 91 {
+    } else if code == '[' {
       bracket += 1
-    } else if code == 93 {
+    } else if code == ']' {
       bracket -= 1
-    } else if code == 44 && paren == 0 && bracket == 0 {
+    } else if code == ',' && paren == 0 && bracket == 0 {
       parts.push(input.unsafe_substring(start~, end=i).trim().to_owned())
       start = i + 1
     }
@@ -372,7 +370,7 @@ fn candidate_name_from_line(line : String) -> (String, Int) raise MbSearchError 
     pos += 1
   }
   let start = pos
-  while pos < trimmed.length() && trimmed[pos] != 40 && !is_space(trimmed[pos]) {
+  while pos < trimmed.length() && trimmed[pos] != '(' && !is_space(trimmed[pos]) {
     pos += 1
   }
   if start == pos {
@@ -389,7 +387,7 @@ pub fn parse_doc_signature(line : String) -> MbCandidate raise MbSearchError {
   let trimmed = line.trim().to_owned()
   let (name, name_end) = candidate_name_from_line(trimmed)
   let open = for i = name_end; i < trimmed.length(); i = i + 1 {
-    if trimmed[i] == 40 {
+    if trimmed[i] == '(' {
       break i
     }
   } nobreak {
@@ -401,7 +399,7 @@ pub fn parse_doc_signature(line : String) -> MbCandidate raise MbSearchError {
       message="missing parameter list",
     )
   }
-  let close = find_matching(trimmed, open, 40, 41)
+  let close = find_matching(trimmed, open, '(', ')')
   if close < 0 {
     raise MbSearchError::InvalidSignature(
       line=trimmed,

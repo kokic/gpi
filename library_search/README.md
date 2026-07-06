@@ -23,7 +23,7 @@ lines from generated docs, `moon ide doc`, or another extraction step.
 
 ```mbt
 let index = MbSearchIndex::new()
-index.add_doc_signature(
+index..add_doc_signature(
   "pub fn[T] Array::get(Self[T], Int) -> T?"
 )
 let results = index.search_type("Array[String] -> Int -> Option[String]")
@@ -44,3 +44,6 @@ Supported type syntax includes:
 Queries containing type variables fall back to scanning all indexed candidates
 after parsing. This preserves correctness while GPI lacks arity-aware wildcard
 skip keys. Concrete queries still use the discrimination tree first.
+
+This is a temporary implementation detail and is marked with a `TODO` in the
+search code.
