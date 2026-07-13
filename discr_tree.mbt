@@ -65,11 +65,10 @@ fn[Symbol : Eq + Hash, Candidate] Trie::retrieve_match(
   index : Int,
   output : Array[Candidate],
 ) -> Unit {
-  if index >= keys.length() {
-    output.append(self.values)
-  } else {
-    let key = keys[index]
-    if key is Star {
+  guard index < keys.length() else { output.append(self.values) }
+  let key = keys[index]
+  match key {
+    Star =>
       self.children.each((child_key, child) => {
         child.retrieve_after_candidate_subtree(
           pending=child_key.subtree_arity(),
@@ -78,7 +77,7 @@ fn[Symbol : Eq + Hash, Candidate] Trie::retrieve_match(
           output,
         )
       })
-    } else {
+    Symbol(_, _) => {
       if self.children.get(Star) is Some(child) {
         child.retrieve_match(keys, skip_query_subtree(keys, index), output)
       }

@@ -55,20 +55,16 @@ pub fn MbSearchIndex::add_doc_signatures(
 ) -> Unit raise MbtSearchError {
   for line in lines {
     let trimmed = line.trim().to_owned()
-    if trimmed.has_prefix("pub fn") {
-      self.add_doc_signature(trimmed)
-    }
+    guard trimmed.has_prefix("pub fn") else { continue }
+    self.add_doc_signature(trimmed)
   }
 }
 
 ///|
 fn result_compare(left : MbtSearchResult, right : MbtSearchResult) -> Int {
   let by_score = left.score.compare(right.score)
-  if by_score != 0 {
-    by_score
-  } else {
-    left.candidate.name.compare(right.candidate.name)
-  }
+  guard by_score == 0 else { by_score }
+  left.candidate.name.compare(right.candidate.name)
 }
 
 ///|
@@ -90,16 +86,12 @@ pub fn MbSearchIndex::search(
   let ids = self.index.retrieve(query_type.to_pattern())
   let results : Array[MbtSearchResult] = []
   for id in ids {
-    match self.candidates.get(id) {
-      Some(candidate) =>
-        if matches_type(candidate.signature, query_type) {
-          results.push({
-            candidate,
-            score: candidate_score(query_type, candidate.signature),
-          })
-        }
-      None => ()
-    }
+    guard self.candidates.get(id) is Some(candidate) else { continue }
+    guard matches_type(candidate.signature, query_type) else { continue }
+    results.push({
+      candidate,
+      score: candidate_score(query_type, candidate.signature),
+    })
   }
   results.sort_by(result_compare)
   if limit >= 0 && results.length() > limit {

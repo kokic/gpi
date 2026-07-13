@@ -73,7 +73,6 @@ fn[Symbol, Variable] Pattern::preorder_into(
   out : Array[Pattern[Symbol, Variable]],
 ) -> Unit {
   out.push(self)
-  if self is Node(_, children) {
-    children.each(child => child.preorder_into(out))
-  }
+  guard self is Node(_, children) else { () }
+  children.each(child => child.preorder_into(out))
 }

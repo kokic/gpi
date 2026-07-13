@@ -57,10 +57,8 @@ fn[Pattern, Key, Candidate] profile_keys(
 ) -> Array[Key] {
   let keys : Array[Key] = []
   for node in (profile.traverse)(pattern) {
-    match (profile.key)(node) {
-      Some(key) => keys.push(key)
-      None => ()
-    }
+    guard (profile.key)(node) is Some(key) else { continue }
+    keys.push(key)
   }
   keys
 }

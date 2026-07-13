@@ -18,13 +18,11 @@ fn bind_var(
 ) -> Bool {
   match subst.get(name) {
     Some(existing) => existing == target
-    None =>
-      if occurs(name, target) {
-        false
-      } else {
-        subst.set(name, target)
-        true
-      }
+    None => {
+      guard !occurs(name, target) else { false }
+      subst.set(name, target)
+      true
+    }
   }
 }
 
@@ -72,16 +70,11 @@ fn unify_arrays(
   right : Array[MbtType],
   subst : Map[String, MbtType],
 ) -> Bool {
-  if left.length() != right.length() {
-    false
-  } else {
-    for i in 0..<left.length() {
-      if !unify_candidate(left[i], right[i], subst) {
-        return false
-      }
-    }
-    true
+  guard left.length() == right.length() else { false }
+  for i in 0..<left.length() {
+    guard unify_candidate(left[i], right[i], subst) else { return false }
   }
+  true
 }
 
 ///|

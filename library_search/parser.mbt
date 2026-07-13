@@ -49,21 +49,15 @@ fn Parser::at_end(self : Parser) -> Bool {
 
 ///|
 fn Parser::peek(self : Parser) -> UInt16? {
-  if self.at_end() {
-    None
-  } else {
-    Some(self.input[self.pos])
-  }
+  guard !self.at_end() else { None }
+  Some(self.input[self.pos])
 }
 
 ///|
 fn Parser::skip_ws(self : Parser) -> Unit {
   while self.peek() is Some(code) {
-    if is_space(code) {
-      self.pos += 1
-    } else {
-      break
-    }
+    guard is_space(code) else { break }
+    self.pos += 1
   }
 }
 
@@ -76,17 +70,14 @@ fn Parser::starts_with(self : Parser, text : String) -> Bool {
 
 ///|
 fn Parser::consume(self : Parser, text : String) -> Bool {
-  if self.starts_with(text) {
-    self.pos += text.length()
-    true
-  } else {
-    false
-  }
+  guard self.starts_with(text) else { false }
+  self.pos += text.length()
+  true
 }
 
 ///|
 fn Parser::expect(self : Parser, text : String) -> Unit raise MbtSearchError {
-  if !self.consume(text) {
+  guard self.consume(text) else {
     raise MbtSearchError::InvalidType(
       input=self.input,
       offset=self.pos,
@@ -111,12 +102,13 @@ fn Parser::parse_ident(self : Parser) -> String raise MbtSearchError {
   while self.peek() is Some(code) {
     if is_ident_continue(code) {
       self.pos += 1
-    } else if code == ':' &&
-      self.pos + 1 < self.input.length() &&
-      self.input[self.pos + 1] == ':' {
-      self.pos += 2
     } else {
-      break
+      guard code == ':' &&
+        self.pos + 1 < self.input.length() &&
+        self.input[self.pos + 1] == ':' else {
+        break
+      }
+      self.pos += 2
     }
   }
   self.input.unsafe_substring(start~, end=self.pos)
@@ -131,26 +123,19 @@ fn Parser::parse_type(self : Parser) -> MbtType raise MbtSearchError {
 fn Parser::parse_arrow(self : Parser) -> MbtType raise MbtSearchError {
   let left = self.parse_postfix()
   self.skip_ws()
-  if self.consume("->") {
-    let right = self.parse_arrow()
-    let left_args = match left {
-      Tuple(items) => Fun(items, right)
-      _ => Fun([left], right)
+  guard self.consume("->") else { left }
+  let right = self.parse_arrow()
+  let args = match left {
+    Tuple(items) => items
+    _ => [left]
+  }
+  match right {
+    Fun(right_args, right_return) => {
+      let all_args = args.copy()
+      all_args.append(right_args)
+      Fun(all_args, right_return)
     }
-    match left_args {
-      Fun(args, _) =>
-        match right {
-          Fun(right_args, right_return) => {
-            let all_args = args.copy()
-            all_args.append(right_args)
-            Fun(all_args, right_return)
-          }
-          _ => left_args
-        }
-      _ => left_args
-    }
-  } else {
-    left
+    _ => Fun(args, right)
   }
 }
 
@@ -159,11 +144,8 @@ fn Parser::parse_postfix(self : Parser) -> MbtType raise MbtSearchError {
   let mut t = self.parse_primary()
   for ;; {
     self.skip_ws()
-    if self.consume("?") {
-      t = option(t)
-    } else {
-      break
-    }
+    guard self.consume("?") else { break }
+    t = option(t)
   }
   t
 }
@@ -201,21 +183,20 @@ fn Parser::parse_primary(self : Parser) -> MbtType raise MbtSearchError {
     if self.consume("[") {
       let args : Array[MbtType] = []
       self.skip_ws()
-      if self.consume("]") {
+      guard !self.consume("]") else {
         raise MbtSearchError::InvalidType(
           input=self.input,
           offset=self.pos - 1,
           message="empty type argument list",
         )
-      } else {
+      }
+      args.push(self.parse_type())
+      self.skip_ws()
+      while self.consume(",") {
         args.push(self.parse_type())
         self.skip_ws()
-        while self.consume(",") {
-          args.push(self.parse_type())
-          self.skip_ws()
-        }
-        self.expect("]")
       }
+      self.expect("]")
       App(real_name, args)
     } else if self.is_type_variable(real_name) {
       Var(real_name)
@@ -227,13 +208,8 @@ fn Parser::parse_primary(self : Parser) -> MbtType raise MbtSearchError {
 
 ///|
 fn Parser::is_type_variable(self : Parser, name : String) -> Bool {
-  if self.generic_vars.length() > 0 {
-    self.generic_vars.contains(name)
-  } else if self.allow_implicit_vars {
-    name.length() == 1 && name[0] is ('A'..='Z')
-  } else {
-    false
-  }
+  guard self.generic_vars.is_empty() else { self.generic_vars.contains(name) }
+  self.allow_implicit_vars && name.length() == 1 && name[0] is ('A'..='Z')
 }
 
 ///|
@@ -257,7 +233,7 @@ fn parse_type_with_self(
   )
   let t = parser.parse_type()
   parser.skip_ws()
-  if !parser.at_end() {
+  guard parser.at_end() else {
     raise MbtSearchError::InvalidType(
       input=cleaned,
       offset=parser.pos,
@@ -331,7 +307,7 @@ fn DelimiterDepth::consume_type(
   input : String,
   offset : Int,
 ) -> Unit raise MbtSearchError {
-  if !self.consume_unchecked(code) {
+  guard self.consume_unchecked(code) else {
     raise MbtSearchError::InvalidType(
       input~,
       offset~,
@@ -346,7 +322,7 @@ fn DelimiterDepth::consume_signature(
   code : UInt16,
   line : String,
 ) -> Unit raise MbtSearchError {
-  if !self.consume_unchecked(code) {
+  guard self.consume_unchecked(code) else {
     raise MbtSearchError::InvalidSignature(line~, message="unmatched delimiter")
   }
 }
@@ -356,7 +332,7 @@ fn DelimiterDepth::expect_type_closed(
   self : DelimiterDepth,
   input : String,
 ) -> Unit raise MbtSearchError {
-  if self.paren != 0 || self.bracket != 0 {
+  guard self.at_top() else {
     raise MbtSearchError::InvalidType(
       input~,
       offset=input.length(),
@@ -370,10 +346,10 @@ fn DelimiterDepth::expect_signature_closed(
   self : DelimiterDepth,
   line : String,
 ) -> Unit raise MbtSearchError {
-  if self.paren != 0 {
+  guard self.paren == 0 else {
     raise MbtSearchError::InvalidSignature(line~, message="unclosed `(`")
   }
-  if self.bracket != 0 {
+  guard self.bracket == 0 else {
     raise MbtSearchError::InvalidSignature(line~, message="unclosed `[`")
   }
 }
@@ -455,9 +431,7 @@ fn split_top_level_commas(
   line : String,
 ) -> Array[String] raise MbtSearchError {
   let trimmed = input.trim().to_owned()
-  if trimmed == "" {
-    return []
-  }
+  guard trimmed != "" else { [] }
   let parts : Array[String] = []
   let mut start = 0
   let depth = DelimiterDepth::new()
@@ -465,7 +439,7 @@ fn split_top_level_commas(
     let code = input[i]
     if code == ',' && depth.at_top() {
       let part = input.unsafe_substring(start~, end=i).trim().to_owned()
-      if part == "" {
+      guard part != "" else {
         raise MbtSearchError::InvalidSignature(
           line~,
           message="empty comma-separated item",
@@ -482,7 +456,7 @@ fn split_top_level_commas(
     .unsafe_substring(start~, end=input.length())
     .trim()
     .to_owned()
-  if tail == "" {
+  guard tail != "" else {
     raise MbtSearchError::InvalidSignature(
       line~,
       message="empty comma-separated item",
@@ -526,14 +500,14 @@ fn generic_param_name(
     end += 1
   }
   let name = trimmed.unsafe_substring(start=0, end~)
-  if name == "" || !is_plain_ident_start(name[0]) {
+  guard name != "" && is_plain_ident_start(name[0]) else {
     raise MbtSearchError::InvalidSignature(
       line~,
       message="invalid generic parameter",
     )
   }
   for i in 1..<name.length() {
-    if !is_plain_ident_continue(name[i]) {
+    guard is_plain_ident_continue(name[i]) else {
       raise MbtSearchError::InvalidSignature(
         line~,
         message="invalid generic parameter",
@@ -549,7 +523,7 @@ fn generic_params_from_text(
   line : String,
 ) -> Array[String] raise MbtSearchError {
   let params = split_top_level_commas(text, line)
-  if params.length() == 0 {
+  guard !params.is_empty() else {
     raise MbtSearchError::InvalidSignature(
       line~,
       message="empty generic parameter list",
@@ -558,7 +532,7 @@ fn generic_params_from_text(
   let names : Array[String] = []
   for param in params {
     let name = generic_param_name(param, line)
-    if names.contains(name) {
+    guard !names.contains(name) else {
       raise MbtSearchError::InvalidSignature(
         line~,
         message="duplicate generic parameter `" + name + "`",
@@ -592,7 +566,7 @@ fn signature_header_from_line(
   line : String,
 ) -> SignatureHeader raise MbtSearchError {
   let trimmed = line.trim().to_owned()
-  if !has_pub_fn_prefix(trimmed) {
+  guard has_pub_fn_prefix(trimmed) else {
     raise MbtSearchError::InvalidSignature(
       line=trimmed,
       message="expected `pub fn` signature line",
@@ -603,18 +577,15 @@ fn signature_header_from_line(
     pos += 1
   }
   let generic_vars = if pos < trimmed.length() && trimmed[pos] == '[' {
-    match find_matching(trimmed, pos, '[', ']') {
-      Some(end) => {
-        let text = trimmed.unsafe_substring(start=pos + 1, end~)
-        pos = end + 1
-        generic_params_from_text(text, trimmed)
-      }
-      None =>
-        raise MbtSearchError::InvalidSignature(
-          line=trimmed,
-          message="unclosed generic parameter list",
-        )
+    guard find_matching(trimmed, pos, '[', ']') is Some(end) else {
+      raise MbtSearchError::InvalidSignature(
+        line=trimmed,
+        message="unclosed generic parameter list",
+      )
     }
+    let text = trimmed.unsafe_substring(start=pos + 1, end~)
+    pos = end + 1
+    generic_params_from_text(text, trimmed)
   } else {
     []
   }
@@ -625,7 +596,7 @@ fn signature_header_from_line(
   while pos < trimmed.length() && trimmed[pos] != '(' && !is_space(trimmed[pos]) {
     pos += 1
   }
-  if start == pos {
+  guard start != pos else {
     raise MbtSearchError::InvalidSignature(
       line=trimmed,
       message="missing function name",
@@ -643,28 +614,24 @@ pub fn parse_doc_signature(line : String) -> MbtCandidate raise MbtSearchError {
   let trimmed = line.trim().to_owned()
   let header = signature_header_from_line(trimmed)
   let name = header.name
-  let open = match find_code_from(trimmed, header.name_end, '(') {
-    Some(open) => open
-    None =>
-      raise MbtSearchError::InvalidSignature(
-        line=trimmed,
-        message="missing parameter list",
-      )
+  guard find_code_from(trimmed, header.name_end, '(') is Some(open) else {
+    raise MbtSearchError::InvalidSignature(
+      line=trimmed,
+      message="missing parameter list",
+    )
   }
-  let close = match find_matching(trimmed, open, '(', ')') {
-    Some(close) => close
-    None =>
-      raise MbtSearchError::InvalidSignature(
-        line=trimmed,
-        message="unclosed parameter list",
-      )
+  guard find_matching(trimmed, open, '(', ')') is Some(close) else {
+    raise MbtSearchError::InvalidSignature(
+      line=trimmed,
+      message="unclosed parameter list",
+    )
   }
   let after_params = trimmed.unsafe_substring(
     start=close + 1,
     end=trimmed.length(),
   )
   let after_params = after_params.trim().to_owned()
-  if !after_params.has_prefix("->") {
+  guard after_params.has_prefix("->") else {
     raise MbtSearchError::InvalidSignature(
       line=trimmed,
       message="missing return type",

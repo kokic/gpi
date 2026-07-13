@@ -73,6 +73,14 @@ test "parse type does not strip raise inside constructor name" {
 }
 
 ///|
+test "parse type flattens right-associated arrow arguments" {
+  debug_inspect(
+    parse_type("(Int, String) -> Bool -> Unit"),
+    content="Fun([Con(\"Int\"), Con(\"String\"), Con(\"Bool\")], Con(\"Unit\"))",
+  )
+}
+
+///|
 test "parse doc signature keeps path-like type before labeled annotation colon" {
   let c = parse_doc_signature(
     "pub fn Example::use_path(value : pkg::Type) -> pkg::Type",

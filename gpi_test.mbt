@@ -73,6 +73,21 @@ test "lazy wildcard root materializes all roots" {
 }
 
 ///|
+test "lazy discrimination tree removes pending candidates" {
+  let index = lazy_index(type_profile())
+  let pattern = Pattern::leaf("String")
+  index..insert(pattern, "string").remove(pattern, "string")
+  debug_inspect(index.retrieve(pattern), content="[]")
+}
+
+///|
+test "lazy discrimination tree handles empty key paths eagerly" {
+  let tree : LazyDiscrTree[String, String] = LazyDiscrTree::new()
+  tree.insert([], "empty")
+  debug_inspect(tree.retrieve([]), content="[\"empty\"]")
+}
+
+///|
 test "profile matcher filters potential candidates" {
   let profile : RetrievalProfile[Pattern[String, String], Key[String], String] = {
     normalize_query: identity_normalize,

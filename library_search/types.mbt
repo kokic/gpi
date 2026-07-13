@@ -107,9 +107,6 @@ fn MbtType::node_count(self : MbtType) -> Int {
 
 ///|
 fn candidate_score(query : MbtType, candidate : MbtType) -> Int {
-  if query == candidate {
-    0
-  } else {
-    candidate.generic_count() * 10 + candidate.node_count()
-  }
+  guard query != candidate else { 0 }
+  candidate.generic_count() * 10 + candidate.node_count()
 }
