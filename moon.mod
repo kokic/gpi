@@ -13,3 +13,7 @@ keywords = [ ]
 description = ""
 
 preferred_target = "native"
+
+import {
+  "moonbitlang/parser@0.3.9",
+}

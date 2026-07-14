@@ -1,0 +1,4 @@
+import {
+  "kokic/gpi",
+  "moonbitlang/core/test",
+}
