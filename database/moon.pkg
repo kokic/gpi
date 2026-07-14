@@ -1,4 +1,8 @@
 import {
-  "kokic/gpi",
-  "moonbitlang/core/test",
+  "moonbitlang/parser",
+  "moonbitlang/parser/syntax",
 }
+
+import {
+  "moonbitlang/core/test",
+} for "test"

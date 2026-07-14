@@ -171,3 +171,23 @@ test "search_doc_signatures skips non function lines" {
   )
   debug_inspect(results.map(r => r.candidate.name), content="[\"Array::iter\"]")
 }
+
+///|
+test "index function signatures extracted from MoonBit source" {
+  let source =
+    #|#alias(first)
+    #|pub fn[A] Deque::front(
+    #|  self : Deque[A],
+    #|) -> A? {
+    #|  ...
+    #|}
+    #|
+    #|fn private_helper() -> Unit { () }
+  let index = MbSearchIndex::new()
+  index.add_doc_signatures(@database.public_function_signatures(source))
+  let results = index.search_type("Deque[Int] -> Option[Int]")
+  debug_inspect(
+    results.map(result => result.candidate.name),
+    content="[\"Deque::front\"]",
+  )
+}

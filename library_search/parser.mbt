@@ -456,13 +456,9 @@ fn split_top_level_commas(
     .unsafe_substring(start~, end=input.length())
     .trim()
     .to_owned()
-  guard tail != "" else {
-    raise MbtSearchError::InvalidSignature(
-      line~,
-      message="empty comma-separated item",
-    )
+  if tail != "" {
+    parts.push(tail)
   }
-  parts.push(tail)
   parts
 }
 

@@ -2,3 +2,7 @@ import {
   "kokic/gpi",
   "moonbitlang/core/test",
 }
+
+import {
+  "kokic/gpi/database",
+} for "test"
